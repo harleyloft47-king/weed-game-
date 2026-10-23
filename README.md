@@ -18,6 +18,21 @@ The three files are identical except for one line near the top of the script:
 
 The other two versions use `{kind:"test", startCoins:250000, badge:"TEST KIT", tools:true}` and `{kind:"friends", startCoins:3000, badge:"FRIENDS TEST", tools:false}`, and each has its own `<title>`. **Change only `strain-packs.html`**, then copy it over the other two and swap in that line and the title.
 
+## Phone app (iPhone, Android, Samsung)
+
+The `docs/` folder is the game as an installable phone app (a "home-screen app", also called a PWA). After it's put online, people open the link on their phone and add it to their home screen. It then opens full screen with its own icon and works with no signal.
+
+- `docs/index.html` is the game page, built from `strain-packs.html`
+- `docs/manifest.webmanifest` sets the app name, icon and full-screen mode
+- `docs/sw.js` provides offline play
+- `docs/icons/` holds the app icons
+
+**After changing `strain-packs.html`, run `python3 build-app.py`** to rebuild `docs/index.html`. It also updates the version in `sw.js`, so installed phones get the new game next time they open it with signal.
+
+How to install on a phone:
+- **iPhone:** open the link in **Safari**, tap **Share**, then **Add to Home Screen**.
+- **Android / Samsung:** open the link in **Chrome** or **Samsung Internet**, tap the menu (⋮ or ≡), then **Install app** or **Add to Home screen**.
+
 ## How the file is laid out
 
 - **No `<html>`/`<head>`/`<body>` tags.** The file starts with `<title>` and `<style>`, followed by the page markup, then one big `<script>`.

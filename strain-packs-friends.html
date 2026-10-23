@@ -4220,8 +4220,12 @@ function watchFriends(){
     }, () => { FRD.unsub = null; });
   } catch(e){ FRD.unsub = null; }
 }
+// true when the game runs on its own (the phone app or a downloaded copy) instead of inside Claude
+const STANDALONE = !(window.claude && window.claude.use);
+const APP_NOTE = "Online play (who's playing, friends, seed trading, the leaderboard and the grow-off) is only in the Claude version of the game. This copy saves your progress on this phone.";
 async function connectRoom(){
-  if (ROOMX || !window.claude || !window.claude.use) return;
+  if (STANDALONE){ ON.state = "off"; return; }
+  if (ROOMX) return;
   try {
     const room = await window.claude.use("room");
     if (!room){ ON.state = "off"; return socialRender(); }
@@ -4271,7 +4275,7 @@ function onlineHTML(){
   const others = ON.list.filter(x => !x.me).length;
   const rows = ON.list.map(x => whoHTML(x.id, `${x.lv ? `Level ${x.lv}` : "Just joined"}${floorName(x.floor) ? ` · in ${esc(floorName(x.floor))}` : ""}`, frBtn(x.id), true)).join("");
   return `<div class="panel social"><div class="row" style="justify-content:space-between"><div class="label"><i class="pdot"></i> Online now</div><span class="odds num">${ON.state === "on" ? `${ON.list.length} playing` : ""}</span></div>
-    ${ON.state === "off" ? `<div class="odds">The online list isn't available for you here. It needs you to be signed in with access to this game.</div>`
+    ${ON.state === "off" ? `<div class="odds">${STANDALONE ? APP_NOTE : "The online list isn't available for you here. It needs you to be signed in with access to this game."}</div>`
       : ON.state === "wait" ? `<div class="odds">Looking for other players…</div>`
       : rows + (others ? "" : `<div class="odds">Nobody else is playing right now. Players show up here the moment they open the game.</div>`)}
     <span class="odds">Shows everyone who has this game open right now, and which floor they're on.</span></div>`;
@@ -4437,6 +4441,7 @@ function tradesHTML(){
       : `<div class="odds">No offers from other players right now.</div>`}</div>`;
 }
 function viewFriends(){
+  if (STANDALONE) return `<div class="empty">${APP_NOTE}</div>`;
   if (!DBX || !MYID) return `<div class="empty">Leaderboards, the weekly grow-off and seed trading need you to be signed in with access to this game. If you are, give it a few seconds to connect and tap Refresh.<br><br><button class="btn" data-act="friendsrefresh">Refresh</button></div>` + growoffHTML();
   if (!FR.lb && !FR.loading) loadFriends();
   return `<div class="row" style="justify-content:space-between;margin-bottom:10px"><span class="odds">${FR.err || (FR.loading ? "Loading the boards…" : "Scores update when you harvest. Friends, trades and entries need Contributor access.")}</span><button class="btn small" data-act="friendsrefresh">Refresh</button></div>
@@ -5914,7 +5919,7 @@ function accBtnPaint(){
   const b = $("#accbtn"); if (!b) return; const nm = accName();
   b.innerHTML = ACC.state === "in" ? `<span class="accini" style="background:${accColor()}">${esc(nm.charAt(0).toUpperCase() || "✓")}</span>`
     : `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="4" fill="currentColor"/><path d="M4 21 Q4 13.5 12 13.5 Q20 13.5 20 21Z" fill="currentColor"/></svg>`;
-  b.title = ACC.state === "in" ? (nm ? "Signed in as " + nm : "Signed in") : ACC.state === "wait" ? "Connecting to your account" : "Not signed in";
+  b.title = ACC.state === "in" ? (nm ? "Signed in as " + nm : "Signed in") : STANDALONE ? "Your player" : ACC.state === "wait" ? "Connecting to your account" : "Not signed in";
   b.classList.toggle("off", ACC.state !== "in");
 }
 function accPaint(){
@@ -5935,8 +5940,9 @@ function accPaint(){
       ${ACC.canWrite === false ? `<div class="tillmsg" role="note">You have view-only access to this game, so friends, trading and the leaderboard are off for you. Ask the owner to make you a Contributor in the Share menu.</div>` : ""}
       <span class="odds">You sign in with your Claude account, so there is no separate password for the game. To play as someone else, sign out of Claude and open the game from the other account.</span>`;
   } else {
-    pop.innerHTML = `<div class="acchead"><span class="ava big" style="background:#4a5563" aria-hidden="true">?</span><div class="wn"><b>${ACC.state === "wait" ? "Connecting…" : "Not signed in"}</b><span class="odds">${ACC.state === "wait" ? "Checking your account" : "Playing as a guest on this device"}</span></div></div>
+    pop.innerHTML = `<div class="acchead"><span class="ava big" style="background:#4a5563" aria-hidden="true">?</span><div class="wn"><b>${ACC.state === "wait" ? "Connecting…" : STANDALONE ? "Your player" : "Not signed in"}</b><span class="odds">${ACC.state === "wait" ? "Checking your account" : STANDALONE ? "Playing on this phone" : "Playing as a guest on this device"}</span></div></div>
       ${ACC.state === "wait" ? `<span class="odds">This takes a few seconds after the game opens.</span>`
+        : STANDALONE ? `<span class="odds">Your progress is saved on this phone. ${APP_NOTE.split(".")[0]}.</span>`
         : `<span class="odds">Your progress is saved on this device only. Sign in to Claude and open the game from your account to save your progress to your account, show up online, add friends and get on the leaderboard.</span>
       <div class="row"><a class="btn primary" href="https://claude.ai/login" target="_blank" rel="noopener">Sign in to Claude</a><button class="btn small" data-acc="retry">I'm signed in · try again</button></div>`}
       ${stats}`;
